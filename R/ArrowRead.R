@@ -76,6 +76,7 @@ getFragmentsFromProject <- function(
 #' @param cellNames A character vector indicating the cell names of a subset of cells from which fragments whould be extracted.
 #' This allows for extraction of fragments from only a subset of selected cells. By default, this function will extract all cells
 #' from the provided ArrowFile using `getCellNames()`.
+#' @param maxFragmentLength An integer or Inf that describes the max fragment length to retain when filtering
 #' @param verbose A boolean value indicating whether to use verbose output during execution of this function. Can be set to `FALSE` for a cleaner output.
 #' @param logFile The path to a file to be used for logging ArchR output.
 #'
@@ -92,6 +93,7 @@ getFragmentsFromArrow <- function(
   ArrowFile = NULL, 
   chr = NULL, 
   cellNames = NULL, 
+  maxFragmentLength = Inf,
   verbose = TRUE,
   logFile = createLogFile("getFragmentsFromArrow")
   ){
@@ -99,6 +101,7 @@ getFragmentsFromArrow <- function(
   .validInput(input = ArrowFile, name = "ArrowFile", valid = "character")
   .validInput(input = chr, name = "chr", valid = c("character","null"))
   .validInput(input = cellNames, name = "cellNames", valid = c("character","null"))
+  .validInput(input = maxFragmentLength, name = "maxFragmentLength", valid = c("integer", "infinite"))
   .validInput(input = verbose, name = "verbose", valid = c("boolean"))
 
   tstart <- Sys.time()
@@ -122,7 +125,8 @@ getFragmentsFromArrow <- function(
       chr = chr[x], 
       out = "GRanges", 
       cellNames = cellNames, 
-      method = "fast"
+      method = "fast",
+      maxFragmentLength = maxFragmentLength
     )
   })
 
@@ -167,7 +171,7 @@ getFragmentsFromArrow <- function(
   out = "GRanges", 
   cellNames = NULL, 
   method = "fast",
-  maxFragSize = Inf
+  maxFragmentLength = Inf
   ){
 
   if(is.null(chr)){
@@ -241,7 +245,6 @@ getFragmentsFromArrow <- function(
   if(tolower(out)=="granges"){
     if(length(output) > 0){
       output <- GRanges(seqnames = chr, ranges(output), RG = mcols(output)$RG)
-      output <- output[width(output) <= maxFragSize]
     }else{
       output <- IRanges(start = 1, end = 1)
       mcols(output)$RG <- c("tmp")
@@ -249,6 +252,9 @@ getFragmentsFromArrow <- function(
       output <- output[-1,]
     }
   }
+  
+  # Filter by fragment length 
+  output <- output[width(output) <= maxFragmentLength]
 
   return(output)
 }
