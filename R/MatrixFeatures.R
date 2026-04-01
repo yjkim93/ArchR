@@ -17,6 +17,7 @@
 #' @param parallelParam A list of parameters to be passed for biocparallel/batchtools parallel computing.
 #' @param force A boolean value indicating whether to force the matrix indicated by `matrixName` to be overwritten if it already exists in the `input`.
 #' @param logFile The path to a file to be used for logging ArchR output.
+#' @param maxFragmentLength An integer or Inf that describes the max fragment length to retain when filtering
 #' 
 #' @examples
 #'
@@ -37,7 +38,8 @@ addFeatureMatrix <- function(
   threads = getArchRThreads(),
   parallelParam = NULL,
   force = TRUE,
-  logFile = createLogFile("addFeatureMatrix")
+  logFile = createLogFile("addFeatureMatrix"),
+  maxFragmentLength = Inf
   ){
 
   .validInput(input = input, name = "input", valid = c("ArchRProj", "character"))
@@ -50,6 +52,7 @@ addFeatureMatrix <- function(
   .validInput(input = parallelParam, name = "parallelParam", valid = c("parallelparam", "null"))
   .validInput(input = force, name = "force", valid = c("boolean"))
   .validInput(input = logFile, name = "logFile", valid = c("character"))
+  .validInput(input = maxFragmentLength, name = "maxFragmentLength", valid = c("integer", "infinite"))
 
   matrixName <- .isProtectedArray(matrixName)
 
@@ -133,6 +136,7 @@ addFeatureMatrix <- function(
 addPeakMatrix <- function(
   ArchRProj = NULL,
   ceiling = 4, 
+  maxFragmentLength=Inf,
   binarize = FALSE,
   verbose = TRUE,
   threads = getArchRThreads(),
@@ -143,6 +147,7 @@ addPeakMatrix <- function(
 
   .validInput(input = ArchRProj, name = "ArchRProj", valid = c("ArchRProj"))
   .validInput(input = ceiling, name = "ceiling", valid = c("numeric"))
+  .validInput(input = maxFragmentLength, name = "maxFragmentLength", valid = c("integer", "infinite"))
   .validInput(input = binarize, name = "binarize", valid = c("boolean"))
   .validInput(input = verbose, name = "verbose", valid = c("boolean"))
   .validInput(input = threads, name = "threads", valid = c("integer"))
@@ -200,6 +205,7 @@ addPeakMatrix <- function(
   allCells = NULL,
   matrixName = "PeakMatrix", 
   ceiling = 4, 
+  maxFragmentLength=Inf,
   binarize = FALSE,
   tstart = NULL,
   subThreads = 1,
@@ -293,7 +299,8 @@ addPeakMatrix <- function(
       .logDiffTime(sprintf("Adding %s to %s for Chr (%s of %s)!", sampleName, matrixName, z, length(uniqueChr)), tstart, verbose = verbose, logFile = logFile)
 
       #Read in Fragments
-      fragments <- .getFragsFromArrow(ArrowFile, chr = chr, out = "IRanges", cellNames = cellNames)
+      fragments <- .getFragsFromArrow(ArrowFile, chr = chr, out = "IRanges", cellNames = cellNames, maxFragmentLength = maxFragmentLength)
+
       tabFrags <- table(mcols(fragments)$RG)
 
       #Count Left Insertion
